@@ -1,18 +1,21 @@
-use std::fmt;
-use std::net::TcpListener;
 use client::Client;
 use status::Status;
-use std::thread;
+use std::fmt;
+use std::io::Read;
+use std::io::Write;
+use std::net::TcpListener;
 use std::sync::mpsc;
-use std::sync::mpsc::{Sender, Receiver};
-
+use std::sync::mpsc::{channel, Receiver, Sender};
+use std::thread;
 
 mod client;
 mod status;
-pub struct Server<> {
+pub struct Server {
     server: TcpListener,
     addr: String,
-    clients: Vec<Client>
+    clients: Vec<Client>,
+    sender: Sender<String>,
+    receiver: Receiver<String>
 }
 
 impl fmt::Display for Server {
@@ -22,14 +25,34 @@ impl fmt::Display for Server {
 }
 
 impl Server {
-    pub fn new(&self, addr: &str) -> Self {
-        Self { server: TcpListener::bind(addr).unwrap(), addr: addr.to_owned(), clients: Vec::<Client>::new() }
+    pub fn new(addr: &str) -> Self {
+        let (sender, receiver) = channel::<String>();
+        Self {
+            server: TcpListener::bind(addr).unwrap(),
+            addr: addr.to_owned(),
+            clients: Vec::<Client>::new(),
+            sender: sender,
+            receiver: receiver
+        }
     }
 
-    pub fn accept(&self){
+    pub fn accept(&mut self) {
         loop {
             match self.server.accept() {
-                Ok((stream, addr)) => {}
+                Ok((mut stream, _addr)) => {
+                    let mut name = [0 as u8; 120];
+
+                    if stream.read(&mut name).is_err() {continue}
+
+                    let client = Client::new(
+                        String::from_utf8(name.to_vec()).unwrap(),
+                        stream,
+                        self.sender.clone()
+                    );
+                    self.clients.push(client)
+                }
+
+                Err(_) => {}
             }
         }
     }

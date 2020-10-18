@@ -1,4 +1,4 @@
 pub enum Status{
-  Active,
-  Inactive
+  Inactive,
+  Active
 }
