@@ -1,39 +1,35 @@
 use super::Status;
-use std::io::Write;
-use std::net::TcpStream;
+use std::io::{Write, Read};
+use std::net::{TcpStream, Shutdown};
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::SystemTime;
+use std::clone::Clone;
+
+use std::time::Duration;
+
+#[derive(Debug)]
 pub struct Client {
-    name: String,
-    stream: TcpStream,
-    sender: Sender<String>,
+    pub stream: TcpStream,
 }
 
 impl Client {
-    pub fn new(name: String, stream: TcpStream, sender: Sender<String>) -> Self {
+    pub fn new(stream: TcpStream) -> Self {
         let instance = Self {
-            name,
-            stream,
-            sender,
+            stream
         };
+
+        instance.stream.set_read_timeout(Some(Duration::from_millis(300))).unwrap();
+
         println!(
             "
             \n
             New Client\n
-            Name: {}\n
             Address: {}
             ",
-            instance.name,
             instance.stream.peer_addr().expect("Could not display addr")
         );
         
         return instance;
     }
 
-    pub fn write(&mut self, message: &str) -> Status {
-        match self.stream.write(message.as_bytes()) {
-            Ok(_) => Status::Active,
-            Err(_) => Status::Inactive,
-        }
-    }
 }
