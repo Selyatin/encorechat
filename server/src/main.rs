@@ -11,12 +11,12 @@ fn sleep(){
 
 fn main(){
     let args: Vec<String> = args().collect();
-    let listener = TcpListener::bind("127.0.0.1:".to_owned() + &args[1]).expect("Couldn't bind");
+    let listener = TcpListener::bind("0.0.0.0:".to_owned() + &args[1]).expect("Couldn't bind");
     listener.set_nonblocking(true).expect("Couldn't set nonblocking");
     let clients_lock = Arc::new(Mutex::new(Vec::<TcpStream>::new()));
     let clients_lock_clone = clients_lock.clone();
     let (sender, receiver) = channel::<Vec<u8>>();
-
+    println!("---- Encorechat ----");
     loop {
         if let Ok((mut stream, _)) = listener.accept(){
             let mut clients = clients_lock.lock().expect("Couldn't lock clients_lock");
@@ -43,12 +43,10 @@ fn main(){
             let mut clients = clients_lock_clone.lock().expect("Couldn't lock client_lock in receiver");
             let mut clients_to_be_removed: Vec<usize> = vec![];
             for (pos, mut client) in clients.iter().enumerate(){
-                println!("{}", clients.len());
                 match client.write(&msg) {
                     Ok(_) => continue,
                     
                     Err(err) => {
-                        println!("{}", err);
                         clients_to_be_removed.push(pos);
                         continue;
                     }
