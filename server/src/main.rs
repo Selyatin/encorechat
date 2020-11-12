@@ -18,13 +18,14 @@ fn main(){
     let (sender, receiver) = channel::<Vec<u8>>();
     println!("---- Encorechat ----");
     loop {
+        println!("Clients: {:?}", clients_lock.lock().expect("Couldn't lock client_lock in println"));
         if let Ok((mut stream, _)) = listener.accept(){
             let mut clients = clients_lock.lock().expect("Couldn't lock clients_lock");
             clients.push(stream.try_clone().expect("Couldn't clone stream to put it inside clients Vector"));
             let sender_clone = sender.clone();
 
             spawn(move || loop {
-                let mut buff: Vec<u8> = vec![0; 512];
+                let mut buff: Vec<u8> = vec![0 as u8; 2056];
     
                 if stream.read(&mut buff).is_err(){
                     println!("Error while reading from stream: {:?}", stream);
@@ -41,22 +42,21 @@ fn main(){
 
         if let Ok(msg) = receiver.try_recv() {
             let mut clients = clients_lock_clone.lock().expect("Couldn't lock client_lock in receiver");
-            let mut clients_to_be_removed: Vec<usize> = vec![];
-            for (pos, mut client) in clients.iter().enumerate(){
+            let i = 0;
+            while i < clients.len(){
+                let mut client = &mut clients[i];
                 match client.write(&msg) {
-                    Ok(_) => continue,
-                    
-                    Err(err) => {
-                        clients_to_be_removed.push(pos);
+                    Ok(_) => {
                         continue;
+                    },
+                    
+                    Err(_) => {
+                        clients.remove(i);
                     }
                 }
             }
-
-            for client_to_be_removed in clients_to_be_removed{
-                clients.remove(client_to_be_removed);
-            }
         }
 
+    sleep();    
     }
 }
