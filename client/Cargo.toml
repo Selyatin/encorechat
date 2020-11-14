@@ -1,5 +1,5 @@
 [package]
-name = "client"
+name = "encorechat-client"
 version = "0.1.0"
 authors = ["Selyatin <selyatinismet@gmail.com>"]
 edition = "2018"

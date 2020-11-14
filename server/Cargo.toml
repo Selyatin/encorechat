@@ -1,5 +1,5 @@
 [package]
-name = "encorechat"
+name = "encorechat-server"
 version = "0.1.0"
 authors = ["Selyatin <selyatinismet@gmail.com>"]
 edition = "2018"
